@@ -3,7 +3,7 @@
 cmake_minimum_required (VERSION 3.1)
 
 # Create a project called 'opengl_basic_template'
-project(opengl-template)
+project(HW2b)
 
 # Define in the C++ code what the variable "SRC_DIR" should be equal to the current_path/src
 add_definitions( -DSRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src" )
@@ -26,14 +26,14 @@ add_subdirectory(ext/glfw)
 # Make a list of all the source files
 set(
     SOURCES
-    src/HW2b.cpp
+        src/main.cpp
     ext/glad/src/glad.c
 )
 
 # Make a list of all the header files
 set(
     INCLUDES
-    src/ShaderStuff.hpp
+        src/shader_compiler.hpp
 )
 
 # Make a list of all of the directories to look in when doing #include "whatever.h"

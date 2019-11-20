@@ -40,7 +40,7 @@ static char *readFile(const char *shaderFile) {
 }
 
 // Create a GLSL program object from vertex and fragment shader files
-GLuint InitShader(const char *vShaderFileName, const char *fShaderFileName) {
+GLuint compileShader(const char *vShaderFileName, const char *fShaderFileName) {
     // Check GLSL version
     cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 
