@@ -5,6 +5,6 @@ out vec4 vcolor;
 uniform mat4 M;
 
 void main()  {
-	gl_Position = M*vertex_position; 
-	vcolor = vertex_color;
+    gl_Position = M * vertex_position;
+    vcolor = vertex_color;
 }

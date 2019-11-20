@@ -43,11 +43,8 @@ static char *readFile(const char *shaderFile) {
 GLuint compileShader(const char *vShaderFileName, const char *fShaderFileName) {
     // Check GLSL version
     cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
-
-    // Read source code from file
+    // Read shader code
     GLchar *vertexShaderCode = readFile(vShaderFileName);
-    GLchar *fragmentShaderCode = readFile(fShaderFileName);
-    // Error check
     if (vertexShaderCode == nullptr) {
         cerr << "Failed to read from vertex shader file: " << vShaderFileName << endl;
         if (DEBUG_ON) {
@@ -55,6 +52,7 @@ GLuint compileShader(const char *vShaderFileName, const char *fShaderFileName) {
         }
         exit(EXIT_FAILURE);
     }
+    GLchar *fragmentShaderCode = readFile(fShaderFileName);
     if (fragmentShaderCode == nullptr) {
         cerr << "Failed to read from fragment shader file: " << fShaderFileName << endl;
         if (DEBUG_ON) {
@@ -62,7 +60,7 @@ GLuint compileShader(const char *vShaderFileName, const char *fShaderFileName) {
         }
         exit(EXIT_FAILURE);
     }
-    // Create shader handlers
+    // Create shaders
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderCode, nullptr);

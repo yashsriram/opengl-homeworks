@@ -67,16 +67,15 @@ static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
     // take the appropriate action
 }
 
-void initShaders() {
+void initStaticDataAndShaders() {
     ColorType3D colors[4];
-    FloatType2D vertices[4];
-    GLuint vao[1], buffer, program, location1, location2;
     // Initialize an identity matrix
     for (int i = 0; i < 16; i++) {
         I[i] = (i % 5 == 0);
     }
-    // Hard code the geometry of interest: 4 base colors and 4 corners of a square
-    // This part can be customized if you want to define a different object, or if you prefer to read in an object description from a file
+    // Hard code the geometry of interest
+    // This part can be customized if you want to define a different object,
+    // or if you prefer to read in an object description from a file
     colors[0].r = 1;
     colors[0].g = 0;
     colors[0].b = 0;  // red
@@ -90,6 +89,7 @@ void initShaders() {
     colors[3].g = 0;
     colors[3].b = 1;  // blue
 
+    FloatType2D vertices[4];
     vertices[0].x = -0.5;
     vertices[0].y = -0.5; // lower left
     vertices[1].x = 0.5;
@@ -100,9 +100,11 @@ void initShaders() {
     vertices[3].y = 0.5; // upper left
 
     // Create and bind a vertex array object
+    GLuint vao[1];
     glGenVertexArrays(1, vao);
     glBindVertexArray(vao[0]);
     // Create and initialize a buffer object large enough to hold both vertex position and color data
+    GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) + sizeof(colors), vertices, GL_STATIC_DRAW);
@@ -113,17 +115,17 @@ void initShaders() {
     vshader << SRC_DIR << "/vshader2b.glsl";
     fshader << SRC_DIR << "/fshader2b.glsl";
     // Load the shaders and use the resulting shader program
-    program = compileShader(vshader.str().c_str(), fshader.str().c_str());
+    GLuint program = compileShader(vshader.str().c_str(), fshader.str().c_str());
     // Determine locations of the necessary attributes and matrices used in the vertex shader
-    location1 = glGetAttribLocation(program, "vertex_position");
+    GLuint location1 = glGetAttribLocation(program, "vertex_position");
     glEnableVertexAttribArray(location1);
     glVertexAttribPointer(location1, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-    location2 = glGetAttribLocation(program, "vertex_color");
+    GLuint location2 = glGetAttribLocation(program, "vertex_color");
     glEnableVertexAttribArray(location2);
     glVertexAttribPointer(location2, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(vertices)));
     m_location = glGetUniformLocation(program, "M");
     // Define static OpenGL state variables
-    glClearColor(1.0, 1.0, 1.0, 1.0); // white, opaque background
+    glClearColor(1.0, 1.0, 1.0, 1.0);
     // Define some GLFW cursors (in case you want to dynamically change the cursor's appearance)
     // If you want, you can add more cursors, or even define your own cursor appearance
     arrow_cursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
@@ -169,15 +171,14 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    // -------- -------- Compile shaders -------- --------
-    // Create the shaders
-    initShaders();
+    // -------- -------- Init data and compile shaders -------- --------
+    initStaticDataAndShaders();
 
     // -------- -------- Graphics rendering loop -------- --------
     while (!glfwWindowShouldClose(window)) {
         // Fill the window with the background color
         glClear(GL_COLOR_BUFFER_BIT);
-        // Define the modelview matrix (in this initial example, we let M = I; you will need to change that)
+        // Define the model view matrix (in this initial example, we let M = I; you will need to change that)
         for (int i = 0; i < 16; i++) {
             M[i] = I[i];
         }
