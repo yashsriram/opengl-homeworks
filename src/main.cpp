@@ -27,10 +27,10 @@ GLfloat I[16];
 // General transformation matrix
 GLfloat M[16];
 // Some assorted global variables, defined as such to make life easier
-GLint m_location;
-GLdouble mouse_x, mouse_y;
-GLint window_width = 500;
-GLint window_height = 500;
+GLint mLocation;
+GLdouble mouseX, mouseY;
+GLint windowWidth = 500;
+GLint windowHeight = 500;
 GLdouble pi = 4.0 * atan(1.0);
 GLFWcursor *hand_cursor, *arrow_cursor;
 
@@ -52,7 +52,7 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
 }
 
 static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
-    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    glfwGetCursorPos(window, &mouseX, &mouseY);
     // Check which mouse button triggered the event, e.g. GLFW_MOUSE_BUTTON_LEFT, etc.
     // and what the button action was, e.g. GLFW_PRESS, GLFW_RELEASE, etc.
     // (Note that ordinary trackpad click = mouse left button)
@@ -123,7 +123,7 @@ void initStaticDataAndShaders() {
     GLuint location2 = glGetAttribLocation(program, "vertex_color");
     glEnableVertexAttribArray(location2);
     glVertexAttribPointer(location2, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(vertices)));
-    m_location = glGetUniformLocation(program, "M");
+    mLocation = glGetUniformLocation(program, "M");
     // Define static OpenGL state variables
     glClearColor(1.0, 1.0, 1.0, 1.0);
     // Define some GLFW cursors (in case you want to dynamically change the cursor's appearance)
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     // Use GLFW to open a window within which to display your graphics
-    window = glfwCreateWindow(window_width, window_height, "OpenGL app", nullptr, nullptr);
+    window = glfwCreateWindow(windowWidth, windowHeight, "OpenGL app", nullptr, nullptr);
     // Verify that the window was successfully created; if not, print error message and terminate
     if (!window) {
         cerr << "GLFW failed to create window; terminating" << endl;
@@ -173,22 +173,30 @@ int main(int argc, char **argv) {
 
     // -------- -------- Init data and compile shaders -------- --------
     initStaticDataAndShaders();
+    // Define the model view matrix (in this initial example, we let M = I; you will need to change that)
+    for (int i = 0; i < 16; i++) {
+        if (i % 5 == 0) {
+            M[i] = 0.5;
+        }
+        if (i == 15) {
+            M[i] = 1;
+        }
+    }
 
     // -------- -------- Graphics rendering loop -------- --------
     while (!glfwWindowShouldClose(window)) {
         // Fill the window with the background color
         glClear(GL_COLOR_BUFFER_BIT);
-        // Define the model view matrix (in this initial example, we let M = I; you will need to change that)
-        for (int i = 0; i < 16; i++) {
-            M[i] = I[i];
-        }
         // Sanity check that your matrix contents are what you expect them to be
         if (DEBUG) {
-            printf("M = [%f %f %f %f\n     %f %f %f %f\n     %f %f %f %f\n     %f %f %f %f]\n", M[0], M[4], M[8], M[12],
+            printf("M = [%f %f %f %f\n"
+                   "     %f %f %f %f\n"
+                   "     %f %f %f %f\n"
+                   "     %f %f %f %f]\n", M[0], M[4], M[8], M[12],
                    M[1], M[5], M[9], M[13], M[2], M[6], M[10], M[14], M[3], M[7], M[11], M[15]);
         }
         // Send the model transformation matrix to the GPU
-        glUniformMatrix4fv(m_location, 1, GL_FALSE, M);
+        glUniformMatrix4fv(mLocation, 1, GL_FALSE, M);
         // Draw a triangle between the first vertex and each successive vertex pair
         glDrawArrays(GL_TRIANGLE_FAN, 0, nvertices);
         // Ensure that all OpenGL calls have executed before swapping buffers
