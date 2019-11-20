@@ -131,6 +131,7 @@ void initShaders() {
 }
 
 int main(int argc, char **argv) {
+    // -------- -------- GLFW setup -------- --------
     GLFWwindow *window;
     // Define the error callback function
     glfwSetErrorCallback(errorCallback);
@@ -151,12 +152,6 @@ int main(int argc, char **argv) {
     }
     // Makes the newly-created context current
     glfwMakeContextCurrent(window);
-    // Load opengl functions
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        cerr << "Failed to gladLoadGLLoader" << endl;
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
     // Tells the system to wait to swap buffers until monitor refresh has completed; necessary to avoid tearing
     glfwSwapInterval(1);
     // Define the keyboard callback function
@@ -165,8 +160,20 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     // Define the mouse motion callback function
     glfwSetCursorPosCallback(window, cursorPositionCallback);
+
+    // -------- -------- Using GLAD to load openGL functions -------- --------
+    // Load opengl functions
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        cerr << "Failed to gladLoadGLLoader" << endl;
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+
+    // -------- -------- Compile shaders -------- --------
     // Create the shaders
     initShaders();
+
+    // -------- -------- Graphics rendering loop -------- --------
     while (!glfwWindowShouldClose(window)) {
         // Fill the window with the background color
         glClear(GL_COLOR_BUFFER_BIT);
@@ -190,6 +197,8 @@ int main(int argc, char **argv) {
         // Wait for an event, then handle it
         glfwWaitEvents();
     }
+
+    // -------- -------- GLFW cleanup -------- --------
     // Clean up
     glfwDestroyWindow(window);
     // Destroys any remaining objects, frees resources allocated by GLFW
