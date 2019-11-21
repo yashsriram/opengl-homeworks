@@ -5,12 +5,16 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
-
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include "shader_compiler.hpp"
 
 #define DEBUG 0
 
 using namespace std;
+using namespace glm;
 
 typedef struct {
     GLfloat x, y;
@@ -22,10 +26,8 @@ typedef struct {
 
 const int nvertices = 4;
 
-// Identity matrix
-GLfloat I[16];
-// General transformation matrix
-GLfloat M[16];
+// General transformation matrix initialized to identity matrix
+mat4 M(1.0f);
 // Some assorted global variables, defined as such to make life easier
 GLint mLocation;
 GLdouble mouseX, mouseY;
@@ -45,6 +47,18 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
         case 'q':
         case 'Q':
             glfwSetWindowShouldClose(window, GL_TRUE);
+            break;
+        case GLFW_KEY_RIGHT:
+            M = scale(mat4(1.0f), vec3(1.02f, 1.0f, 0)) * M;
+            break;
+        case GLFW_KEY_LEFT:
+            M = scale(mat4(1.0f), vec3(0.98f, 1.0f, 0)) * M;
+            break;
+        case GLFW_KEY_UP:
+            M = scale(mat4(1.0f), vec3(1.0f, 1.02f, 0)) * M;
+            break;
+        case GLFW_KEY_DOWN:
+            M = scale(mat4(1.0f), vec3(1.0f, 0.98f, 0)) * M;
             break;
         default:
             break;
@@ -69,10 +83,6 @@ static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
 
 void initStaticDataAndShaders() {
     ColorType3D colors[4];
-    // Initialize an identity matrix
-    for (int i = 0; i < 16; i++) {
-        I[i] = (i % 5 == 0);
-    }
     // Hard code the geometry of interest
     // This part can be customized if you want to define a different object,
     // or if you prefer to read in an object description from a file
@@ -112,17 +122,17 @@ void initStaticDataAndShaders() {
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(colors), colors);
     // Define the names of the shader files
     stringstream vshader, fshader;
-    vshader << SRC_DIR << "/vshader2b.glsl";
-    fshader << SRC_DIR << "/fshader2b.glsl";
+    vshader << SRC_DIR << "/vertex_shader.glsl";
+    fshader << SRC_DIR << "/fragment_shader.glsl";
     // Load the shaders and use the resulting shader program
     GLuint program = compileShader(vshader.str().c_str(), fshader.str().c_str());
     // Determine locations of the necessary attributes and matrices used in the vertex shader
-    GLuint location1 = glGetAttribLocation(program, "vertex_position");
-    glEnableVertexAttribArray(location1);
-    glVertexAttribPointer(location1, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-    GLuint location2 = glGetAttribLocation(program, "vertex_color");
-    glEnableVertexAttribArray(location2);
-    glVertexAttribPointer(location2, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(vertices)));
+    GLuint vertexPositionLocation = glGetAttribLocation(program, "vertexPosition");
+    glEnableVertexAttribArray(vertexPositionLocation);
+    glVertexAttribPointer(vertexPositionLocation, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+    GLuint vertexColorLocation = glGetAttribLocation(program, "vertexColor");
+    glEnableVertexAttribArray(vertexColorLocation);
+    glVertexAttribPointer(vertexColorLocation, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(vertices)));
     mLocation = glGetUniformLocation(program, "M");
     // Define static OpenGL state variables
     glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -173,15 +183,6 @@ int main(int argc, char **argv) {
 
     // -------- -------- Init data and compile shaders -------- --------
     initStaticDataAndShaders();
-    // Define the model view matrix (in this initial example, we let M = I; you will need to change that)
-    for (int i = 0; i < 16; i++) {
-        if (i % 5 == 0) {
-            M[i] = 0.5;
-        }
-        if (i == 15) {
-            M[i] = 1;
-        }
-    }
 
     // -------- -------- Graphics rendering loop -------- --------
     while (!glfwWindowShouldClose(window)) {
@@ -189,14 +190,9 @@ int main(int argc, char **argv) {
         glClear(GL_COLOR_BUFFER_BIT);
         // Sanity check that your matrix contents are what you expect them to be
         if (DEBUG) {
-            printf("M = [%f %f %f %f\n"
-                   "     %f %f %f %f\n"
-                   "     %f %f %f %f\n"
-                   "     %f %f %f %f]\n", M[0], M[4], M[8], M[12],
-                   M[1], M[5], M[9], M[13], M[2], M[6], M[10], M[14], M[3], M[7], M[11], M[15]);
         }
         // Send the model transformation matrix to the GPU
-        glUniformMatrix4fv(mLocation, 1, GL_FALSE, M);
+        glUniformMatrix4fv(mLocation, 1, GL_FALSE, value_ptr(M));
         // Draw a triangle between the first vertex and each successive vertex pair
         glDrawArrays(GL_TRIANGLE_FAN, 0, nvertices);
         // Ensure that all OpenGL calls have executed before swapping buffers
