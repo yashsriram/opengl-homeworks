@@ -10,8 +10,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include "shader_compiler.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
-#define DEBUG 0
+#define DEBUG 1
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
@@ -40,6 +41,21 @@ GLint windowWidth = 1000;
 GLint windowHeight = 1000;
 GLdouble pi = 4.0 * atan(1.0);
 GLFWcursor *hand_cursor, *arrow_cursor;
+const float SMALL_ANGLE = 1.0 / 180 * M_PI;
+const float RfCCW[16] = {
+        cos(SMALL_ANGLE), sin(SMALL_ANGLE), 0, 0,
+        -sin(SMALL_ANGLE), cos(SMALL_ANGLE), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+};
+const float RfCW[16] = {
+        cos(SMALL_ANGLE), -sin(SMALL_ANGLE), 0, 0,
+        sin(SMALL_ANGLE), cos(SMALL_ANGLE), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+};
+glm::mat4 RCCW = glm::make_mat4(RfCCW);
+glm::mat4 RCW = glm::make_mat4(RfCW);
 
 static void errorCallback(int error, const char *description) {
     cerr << "Error code: " << error << ": " << description << endl;
@@ -77,11 +93,11 @@ static void mouseButtonCallback(GLFWwindow *window, int button, int action, int 
     // (Note that ordinary trackpad click = mouse left button)
     // Also check if any modifier keys were active at the time of the button press, e.g. GLFW_MOD_ALT, etc.
     // Take the appropriate action, which could (optionally) also include changing the cursor's appearance
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods != GLFW_MOD_CONTROL) {
         glfwGetCursorPos(window, &mouseX, &mouseY);
         glfwSetCursor(window, glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR));
         doRotate = GL_TRUE;
-    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE && mods != GLFW_MOD_CONTROL) {
         glfwSetCursor(window, glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
         doRotate = GL_FALSE;
     }
@@ -95,11 +111,12 @@ static void cursorPositionCallback(GLFWwindow *window, double x, double y) {
     if (doRotate) {
         if (x - mouseX > 0) {
             // moved right => rotate clockwise
-            M = rotate(M, (float) (-0.3f / M_PI), vec3(0, 0, 1.0f));
+            M = RCW * M;
         } else if (x - mouseX < 0) {
             // moved left => rotate counter-clockwise
-            M = rotate(M, (float) (0.3f / M_PI), vec3(0, 0, 1.0f));
+            M = RCCW * M;
         }
+        mouseX = x;
     }
 }
 
@@ -212,6 +229,11 @@ int main(int argc, char **argv) {
         glClear(GL_COLOR_BUFFER_BIT);
         // Sanity check that your matrix contents are what you expect them to be
         if (DEBUG) {
+            const float *m = (const float *) value_ptr(M);
+            cout << m[0] << " " << m[1] << " " << m[2] << " " << m[3] << endl;
+            cout << m[4] << " " << m[5] << " " << m[6] << " " << m[7] << endl;
+            cout << m[8] << " " << m[9] << " " << m[10] << " " << m[11] << endl;
+            cout << m[12] << " " << m[13] << " " << m[14] << " " << m[15] << endl;
         }
         // Send the model transformation matrix to the GPU
         glUniformMatrix4fv(mLocation, 1, GL_FALSE, value_ptr(M));
