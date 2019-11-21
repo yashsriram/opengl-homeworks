@@ -13,6 +13,10 @@
 
 #define DEBUG 0
 
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795
+#endif
+
 using namespace std;
 using namespace glm;
 
@@ -31,8 +35,9 @@ mat4 M(1.0f);
 // Some assorted global variables, defined as such to make life easier
 GLint mLocation;
 GLdouble mouseX, mouseY;
-GLint windowWidth = 500;
-GLint windowHeight = 500;
+GLboolean doRotate = GL_FALSE;
+GLint windowWidth = 1000;
+GLint windowHeight = 1000;
 GLdouble pi = 4.0 * atan(1.0);
 GLFWcursor *hand_cursor, *arrow_cursor;
 
@@ -50,16 +55,16 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
             M = mat4(1.0f);
             break;
         case GLFW_KEY_RIGHT:
-            M = scale(mat4(1.0f), vec3(1.02f, 1.0f, 0)) * M;
+            M = scale(M, vec3(1.02f, 1.0f, 0));
             break;
         case GLFW_KEY_LEFT:
-            M = scale(mat4(1.0f), vec3(0.98f, 1.0f, 0)) * M;
+            M = scale(M, vec3(0.98f, 1.0f, 0));
             break;
         case GLFW_KEY_UP:
-            M = scale(mat4(1.0f), vec3(1.0f, 1.02f, 0)) * M;
+            M = scale(M, vec3(1.0f, 1.02f, 0));
             break;
         case GLFW_KEY_DOWN:
-            M = scale(mat4(1.0f), vec3(1.0f, 0.98f, 0)) * M;
+            M = scale(M, vec3(1.0f, 0.98f, 0));
             break;
         default:
             break;
@@ -67,19 +72,35 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
 }
 
 static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
-    glfwGetCursorPos(window, &mouseX, &mouseY);
     // Check which mouse button triggered the event, e.g. GLFW_MOUSE_BUTTON_LEFT, etc.
     // and what the button action was, e.g. GLFW_PRESS, GLFW_RELEASE, etc.
     // (Note that ordinary trackpad click = mouse left button)
     // Also check if any modifier keys were active at the time of the button press, e.g. GLFW_MOD_ALT, etc.
     // Take the appropriate action, which could (optionally) also include changing the cursor's appearance
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        glfwSetCursor(window, glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR));
+        doRotate = GL_TRUE;
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        glfwSetCursor(window, glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
+        doRotate = GL_FALSE;
+    }
 }
 
-static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
+static void cursorPositionCallback(GLFWwindow *window, double x, double y) {
     // determine the direction of the mouse or cursor motion
     // update the current mouse or cursor location
     //  (necessary to quantify the amount and direction of cursor motion)
     // take the appropriate action
+    if (doRotate) {
+        if (x - mouseX > 0) {
+            // moved right => rotate clockwise
+            M = rotate(M, (float) (-0.3f / M_PI), vec3(0, 0, 1.0f));
+        } else if (x - mouseX < 0) {
+            // moved left => rotate counter-clockwise
+            M = rotate(M, (float) (0.3f / M_PI), vec3(0, 0, 1.0f));
+        }
+    }
 }
 
 void initStaticDataAndShaders() {
@@ -101,14 +122,14 @@ void initStaticDataAndShaders() {
     colors[3].b = 1;  // blue
 
     FloatType2D vertices[4];
-    vertices[0].x = -0.5;
-    vertices[0].y = -0.5; // lower left
-    vertices[1].x = 0.5;
-    vertices[1].y = -0.5; // lower right
-    vertices[2].x = 0.5;
-    vertices[2].y = 0.5; // upper right
-    vertices[3].x = -0.5;
-    vertices[3].y = 0.5; // upper left
+    vertices[0].x = -0.2;
+    vertices[0].y = -0.2; // lower left
+    vertices[1].x = 0.2;
+    vertices[1].y = -0.2; // lower right
+    vertices[2].x = 0.2;
+    vertices[2].y = 0.2; // upper right
+    vertices[3].x = -0.2;
+    vertices[3].y = 0.2; // upper left
 
     // Create and bind a vertex array object
     GLuint vao[1];
