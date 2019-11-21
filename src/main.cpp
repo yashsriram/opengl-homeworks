@@ -42,11 +42,12 @@ static void errorCallback(int error, const char *description) {
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     switch (key) {
-        // octal ascii code for ESC
-        case 033:
-        case 'q':
-        case 'Q':
+        case GLFW_KEY_ESCAPE:
+        case GLFW_KEY_Q:
             glfwSetWindowShouldClose(window, GL_TRUE);
+            break;
+        case GLFW_KEY_R:
+            M = mat4(1.0f);
             break;
         case GLFW_KEY_RIGHT:
             M = scale(mat4(1.0f), vec3(1.02f, 1.0f, 0)) * M;
