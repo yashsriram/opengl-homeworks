@@ -121,12 +121,18 @@ static void cursorPositionCallback(GLFWwindow *window, GLdouble x, GLdouble y) {
     //  (necessary to quantify the amount and direction of cursor motion)
     // take the appropriate action
     if (doRotate) {
+        glm::vec3 scale;
+        glm::quat orientation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(M, scale, orientation, translation, skew, perspective);
         if (x - mouseX > 0) {
             // moved right => rotate clockwise
-            M = RCW * M;
+            M = translate(mat4(1.0f), translation) * RCW * translate(mat4(1.0f), translation * -1.0f) * M;
         } else if (x - mouseX < 0) {
             // moved left => rotate counter-clockwise
-            M = RCCW * M;
+            M = translate(mat4(1.0f), translation) * RCCW * translate(mat4(1.0f), translation * -1.0f) * M;
         }
         mouseX = x;
     }
