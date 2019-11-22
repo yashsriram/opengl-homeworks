@@ -33,8 +33,7 @@ set(
 # Make a list of all the header files
 set(
     INCLUDES
-        src/shader_compiler.hpp
-        src/mat4.hpp)
+        src/shader_compiler.hpp)
 
 # Make a list of all of the directories to look in when doing #include "whatever.h"
 set(

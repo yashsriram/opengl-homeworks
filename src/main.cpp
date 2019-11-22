@@ -5,21 +5,14 @@
 #include <sstream>
 #include <cmath>
 #include "shader_compiler.hpp"
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include "mat4.hpp"
+#include "vec3.hpp"
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
 #endif
 
 using namespace std;
-using namespace glm;
 
 typedef struct {
     GLfloat x, y;
@@ -32,7 +25,7 @@ typedef struct {
 const int nvertices = 4;
 
 // General transformation matrix initialized to identity matrix
-mat4 M(1.0f);
+Mat4 M(IDENTITY);
 // Some assorted global variables, defined as such to make life easier
 GLint mLocation;
 GLdouble mouseX, mouseY;
@@ -40,66 +33,34 @@ GLboolean doRotate = GL_FALSE;
 GLboolean doTranslate = GL_FALSE;
 GLint windowWidth = 600;
 GLint windowHeight = 600;
-const float SMALL_ANGLE = 2.0 / 180 * M_PI;
-const float RfCCW[16] = {
-        cos(SMALL_ANGLE), sin(SMALL_ANGLE), 0, 0,
-        -sin(SMALL_ANGLE), cos(SMALL_ANGLE), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-};
-const float RfCW[16] = {
-        cos(SMALL_ANGLE), -sin(SMALL_ANGLE), 0, 0,
-        sin(SMALL_ANGLE), cos(SMALL_ANGLE), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-};
-glm::mat4 RCCW = glm::make_mat4(RfCCW);
-glm::mat4 RCW = glm::make_mat4(RfCW);
-
-void printMat4(const mat4 &mat) {
-    const float *m = value_ptr(mat);
-    cout << m[0] << " " << m[4] << " " << m[8] << " " << m[12] << endl;
-    cout << m[1] << " " << m[5] << " " << m[9] << " " << m[13] << endl;
-    cout << m[2] << " " << m[6] << " " << m[10] << " " << m[14] << endl;
-    cout << m[3] << " " << m[7] << " " << m[11] << " " << m[15] << endl;
-    cout << endl;
-}
+const float SMALL_ANGLE = 2.0;
+const Mat4 RCCW = Mat4(SMALL_ANGLE);
+const Mat4 RCW = Mat4(-SMALL_ANGLE);
 
 static void errorCallback(int error, const char *description) {
     cerr << "Error code: " << error << ": " << description << endl;
 }
 
 static void keyCallback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
-    Mat4 mat41;
-    mat41.setUniform(-1, 1);
-    float values[16];
-    mat41.dumpColumnWise(values);
-    cout << values[0] << " " << values[4] << " " << values[8] << " " << values[12] << endl;
-    cout << values[1] << " " << values[5] << " " << values[9] << " " << values[13] << endl;
-    cout << values[2] << " " << values[6] << " " << values[10] << " " << values[14] << endl;
-    cout << values[3] << " " << values[7] << " " << values[11] << " " << values[15] << endl;
-    cout << endl;
-
     switch (key) {
         case GLFW_KEY_ESCAPE:
-            cout << mat41 << endl;
         case GLFW_KEY_Q:
             glfwSetWindowShouldClose(window, GL_TRUE);
             break;
         case GLFW_KEY_R:
-            M = mat4(1.0f);
+            M = Mat4(IDENTITY);
             break;
         case GLFW_KEY_RIGHT:
-            M = scale(M, vec3(1.02f, 1.0f, 0));
+//            M = scale(M, vec3(1.02f, 1.0f, 0));
             break;
         case GLFW_KEY_LEFT:
-            M = scale(M, vec3(0.98f, 1.0f, 0));
+//            M = scale(M, vec3(0.98f, 1.0f, 0));
             break;
         case GLFW_KEY_UP:
-            M = scale(M, vec3(1.0f, 1.02f, 0));
+//            M = scale(M, vec3(1.0f, 1.02f, 0));
             break;
         case GLFW_KEY_DOWN:
-            M = scale(M, vec3(1.0f, 0.98f, 0));
+//            M = scale(M, vec3(1.0f, 0.98f, 0));
             break;
         default:
             break;
@@ -132,41 +93,31 @@ static void cursorPositionCallback(GLFWwindow *window, GLdouble x, GLdouble y) {
     // update the current mouse or cursor location
     //  (necessary to quantify the amount and direction of cursor motion)
     // take the appropriate action
-    const float *m = value_ptr(M);
-    const float translation_f[] = {m[12], m[13], 0.0f};
-    vec3 translation = make_vec3(translation_f);
+    Vec3 translation = M.getTranslationVec3();
     if (doRotate) {
         if (x - mouseX > 0) {
             // moved right => rotate clockwise
-            M = translate(mat4(1.0f), translation) * RCW * translate(mat4(1.0f), translation * -1.0f) * M;
+            M = Mat4(translation) * RCW * Mat4(translation * -1) * M;
         } else if (x - mouseX < 0) {
             // moved left => rotate counter-clockwise
-            M = translate(mat4(1.0f), translation) * RCCW * translate(mat4(1.0f), translation * -1.0f) * M;
+            M = Mat4(translation) * RCCW * Mat4(translation * -1) * M;
         }
         mouseX = x;
     }
     if (doTranslate) {
         GLdouble dx = x - mouseX;
         GLdouble dy = mouseY - y;
-        M = translate(mat4(1.0f), vec3(dx * 2 / windowWidth, dy * 2 / windowHeight, 0)) * M;
-        const float *m = value_ptr(M);
-        float m_clamped[16] = {
-                m[0], m[1], m[2], m[3],
-                m[4], m[5], m[6], m[7],
-                m[8], m[9], m[10], m[11],
-                m[12], m[13], m[14], m[15],
-        };
-        if (m[12] < -1) {
-            m_clamped[12] = -1;
-        } else if (m[12] > 1) {
-            m_clamped[12] = 1;
+        M = Mat4(Vec3(dx * 2 / windowWidth, dy * 2 / windowHeight, 0)) * M;
+        if (M.get(0, 3) < -1) {
+            M.set(0, 3, -1);
+        } else if (M.get(0, 3) > 1) {
+            M.set(0, 3, 1);
         }
-        if (m[13] < -1) {
-            m_clamped[13] = -1;
-        } else if (m[13] > 1) {
-            m_clamped[13] = 1;
+        if (M.get(1, 3) < -1) {
+            M.set(1, 3, -1);
+        } else if (M.get(1, 3) > 1) {
+            M.set(1, 3, 1);
         }
-        M = make_mat4(m_clamped);
         mouseX = x;
         mouseY = y;
     }
@@ -278,7 +229,9 @@ int main(int argc, char **argv) {
         // Sanity check that your matrix contents are what you expect them to be
         // printMat4(M);
         // Send the model transformation matrix to the GPU
-        glUniformMatrix4fv(mLocation, 1, GL_FALSE, value_ptr(M));
+        float values[16];
+        M.dumpColumnWise(values);
+        glUniformMatrix4fv(mLocation, 1, GL_FALSE, values);
         // Draw a triangle between the first vertex and each successive vertex pair
         glDrawArrays(GL_TRIANGLE_FAN, 0, nvertices);
         // Ensure that all OpenGL calls have executed before swapping buffers

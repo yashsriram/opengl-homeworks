@@ -7,6 +7,15 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include "vec3.hpp"
+
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795
+#endif
+
+enum INIT {
+    IDENTITY, ONES, ZEROS
+};
 
 class Mat4 {
     // row major order
@@ -16,11 +25,8 @@ class Mat4 {
     friend std::ostream &operator<<(std::ostream &, const Mat4 &);
 
 public:
-    enum INIT {
-        IDENTITY, ONES, ZEROS
-    };
 
-    Mat4(enum INIT init = IDENTITY) : nR(4), nC(4) {
+    explicit Mat4(enum INIT init = IDENTITY) : nR(4), nC(4) {
         values.resize(nR * nC);
         switch (init) {
             case IDENTITY:
@@ -36,6 +42,23 @@ public:
                 setIdentity();
                 break;
         }
+    }
+
+    explicit Mat4(const float angleInDegrees) : nR(4), nC(4) {
+        values.resize(nR * nC);
+        setIdentity();
+        values[0] = cos(angleInDegrees / 180 * M_PI);
+        values[1] = -sin(angleInDegrees / 180 * M_PI);
+        values[4] = sin(angleInDegrees / 180 * M_PI);
+        values[5] = cos(angleInDegrees / 180 * M_PI);
+    }
+
+    explicit Mat4(const Vec3 translation) : nR(4), nC(4) {
+        values.resize(nR * nC);
+        setIdentity();
+        values[3] = translation.x;
+        values[7] = translation.y;
+        values[11] = translation.z;
     }
 
     Mat4(const Mat4 &m) : nR(m.nR), nC(m.nC) {
@@ -181,12 +204,16 @@ public:
         return result;
     }
 
-    void dumpColumnWise(float *array) {
+    void dumpColumnWise(float *array) const {
         for (int i = 0; i < nR; ++i) {
             for (int j = 0; j < nC; ++j) {
                 array[i + j * nR] = this->values[i * nC + j];
             }
         }
+    }
+
+    Vec3 getTranslationVec3() const {
+        return {values[3], values[7], values[11]};
     }
 
 };
