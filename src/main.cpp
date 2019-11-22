@@ -1,18 +1,17 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <cstdlib>
-#include <cstdio>
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include "shader_compiler.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-#include "shader_compiler.hpp"
 #include <glm/gtc/type_ptr.hpp>
-
-#define DEBUG 1
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
@@ -37,11 +36,10 @@ mat4 M(1.0f);
 GLint mLocation;
 GLdouble mouseX, mouseY;
 GLboolean doRotate = GL_FALSE;
-GLint windowWidth = 1000;
-GLint windowHeight = 1000;
-GLdouble pi = 4.0 * atan(1.0);
-GLFWcursor *hand_cursor, *arrow_cursor;
-const float SMALL_ANGLE = 1.0 / 180 * M_PI;
+GLboolean doTranslate = GL_FALSE;
+GLint windowWidth = 600;
+GLint windowHeight = 600;
+const float SMALL_ANGLE = 2.0 / 180 * M_PI;
 const float RfCCW[16] = {
         cos(SMALL_ANGLE), sin(SMALL_ANGLE), 0, 0,
         -sin(SMALL_ANGLE), cos(SMALL_ANGLE), 0, 0,
@@ -57,11 +55,20 @@ const float RfCW[16] = {
 glm::mat4 RCCW = glm::make_mat4(RfCCW);
 glm::mat4 RCW = glm::make_mat4(RfCW);
 
+void printMat4(const mat4 &mat) {
+    const float *m = value_ptr(mat);
+    cout << m[0] << " " << m[4] << " " << m[8] << " " << m[12] << endl;
+    cout << m[1] << " " << m[5] << " " << m[9] << " " << m[13] << endl;
+    cout << m[2] << " " << m[6] << " " << m[10] << " " << m[14] << endl;
+    cout << m[3] << " " << m[7] << " " << m[11] << " " << m[15] << endl;
+    cout << endl;
+}
+
 static void errorCallback(int error, const char *description) {
     cerr << "Error code: " << error << ": " << description << endl;
 }
 
-static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+static void keyCallback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
     switch (key) {
         case GLFW_KEY_ESCAPE:
         case GLFW_KEY_Q:
@@ -87,7 +94,7 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
     }
 }
 
-static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+static void mouseButtonCallback(GLFWwindow *window, GLint button, GLint action, GLint mods) {
     // Check which mouse button triggered the event, e.g. GLFW_MOUSE_BUTTON_LEFT, etc.
     // and what the button action was, e.g. GLFW_PRESS, GLFW_RELEASE, etc.
     // (Note that ordinary trackpad click = mouse left button)
@@ -97,13 +104,18 @@ static void mouseButtonCallback(GLFWwindow *window, int button, int action, int 
         glfwGetCursorPos(window, &mouseX, &mouseY);
         glfwSetCursor(window, glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR));
         doRotate = GL_TRUE;
-    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE && mods != GLFW_MOD_CONTROL) {
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == GLFW_MOD_CONTROL) {
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        glfwSetCursor(window, glfwCreateStandardCursor(GLFW_HAND_CURSOR));
+        doTranslate = GL_TRUE;
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
         glfwSetCursor(window, glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
         doRotate = GL_FALSE;
+        doTranslate = GL_FALSE;
     }
 }
 
-static void cursorPositionCallback(GLFWwindow *window, double x, double y) {
+static void cursorPositionCallback(GLFWwindow *window, GLdouble x, GLdouble y) {
     // determine the direction of the mouse or cursor motion
     // update the current mouse or cursor location
     //  (necessary to quantify the amount and direction of cursor motion)
@@ -117,6 +129,31 @@ static void cursorPositionCallback(GLFWwindow *window, double x, double y) {
             M = RCCW * M;
         }
         mouseX = x;
+    }
+    if (doTranslate) {
+        GLdouble dx = x - mouseX;
+        GLdouble dy = mouseY - y;
+        M = translate(M, vec3(dx * 2 / windowWidth, dy * 2 / windowHeight, 0));
+        const float *m = value_ptr(M);
+        float m_clamped[16] = {
+                m[0], m[1], m[2], m[3],
+                m[4], m[5], m[6], m[7],
+                m[8], m[9], m[10], m[11],
+                m[12], m[13], m[14], m[15],
+        };
+        if (m[12] < -1) {
+            m_clamped[12] = -1;
+        } else if (m[12] > 1) {
+            m_clamped[12] = 1;
+        }
+        if (m[13] < -1) {
+            m_clamped[13] = -1;
+        } else if (m[13] > 1) {
+            m_clamped[13] = 1;
+        }
+        M = make_mat4(m_clamped);
+        mouseX = x;
+        mouseY = y;
     }
 }
 
@@ -175,10 +212,6 @@ void initStaticDataAndShaders() {
     mLocation = glGetUniformLocation(program, "M");
     // Define static OpenGL state variables
     glClearColor(1.0, 1.0, 1.0, 1.0);
-    // Define some GLFW cursors (in case you want to dynamically change the cursor's appearance)
-    // If you want, you can add more cursors, or even define your own cursor appearance
-    arrow_cursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-    hand_cursor = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
 }
 
 int main(int argc, char **argv) {
@@ -228,13 +261,7 @@ int main(int argc, char **argv) {
         // Fill the window with the background color
         glClear(GL_COLOR_BUFFER_BIT);
         // Sanity check that your matrix contents are what you expect them to be
-        if (DEBUG) {
-            const float *m = (const float *) value_ptr(M);
-            cout << m[0] << " " << m[1] << " " << m[2] << " " << m[3] << endl;
-            cout << m[4] << " " << m[5] << " " << m[6] << " " << m[7] << endl;
-            cout << m[8] << " " << m[9] << " " << m[10] << " " << m[11] << endl;
-            cout << m[12] << " " << m[13] << " " << m[14] << " " << m[15] << endl;
-        }
+        // printMat4(M);
         // Send the model transformation matrix to the GPU
         glUniformMatrix4fv(mLocation, 1, GL_FALSE, value_ptr(M));
         // Draw a triangle between the first vertex and each successive vertex pair
