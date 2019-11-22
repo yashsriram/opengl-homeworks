@@ -120,13 +120,10 @@ static void cursorPositionCallback(GLFWwindow *window, GLdouble x, GLdouble y) {
     // update the current mouse or cursor location
     //  (necessary to quantify the amount and direction of cursor motion)
     // take the appropriate action
+    const float *m = value_ptr(M);
+    const float translation_f[] = {m[12], m[13], 0.0f};
+    vec3 translation = make_vec3(translation_f);
     if (doRotate) {
-        glm::vec3 scale;
-        glm::quat orientation;
-        glm::vec3 translation;
-        glm::vec3 skew;
-        glm::vec4 perspective;
-        glm::decompose(M, scale, orientation, translation, skew, perspective);
         if (x - mouseX > 0) {
             // moved right => rotate clockwise
             M = translate(mat4(1.0f), translation) * RCW * translate(mat4(1.0f), translation * -1.0f) * M;
@@ -139,7 +136,7 @@ static void cursorPositionCallback(GLFWwindow *window, GLdouble x, GLdouble y) {
     if (doTranslate) {
         GLdouble dx = x - mouseX;
         GLdouble dy = mouseY - y;
-        M = translate(M, vec3(dx * 2 / windowWidth, dy * 2 / windowHeight, 0));
+        M = translate(mat4(1.0f), vec3(dx * 2 / windowWidth, dy * 2 / windowHeight, 0)) * M;
         const float *m = value_ptr(M);
         float m_clamped[16] = {
                 m[0], m[1], m[2], m[3],
