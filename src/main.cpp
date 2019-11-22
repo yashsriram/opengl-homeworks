@@ -12,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include "mat4.hpp"
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
@@ -69,8 +70,19 @@ static void errorCallback(int error, const char *description) {
 }
 
 static void keyCallback(GLFWwindow *window, GLint key, GLint scancode, GLint action, GLint mods) {
+    Mat4 mat41;
+    mat41.setUniform(-1, 1);
+    float values[16];
+    mat41.dumpColumnWise(values);
+    cout << values[0] << " " << values[4] << " " << values[8] << " " << values[12] << endl;
+    cout << values[1] << " " << values[5] << " " << values[9] << " " << values[13] << endl;
+    cout << values[2] << " " << values[6] << " " << values[10] << " " << values[14] << endl;
+    cout << values[3] << " " << values[7] << " " << values[11] << " " << values[15] << endl;
+    cout << endl;
+
     switch (key) {
         case GLFW_KEY_ESCAPE:
+            cout << mat41 << endl;
         case GLFW_KEY_Q:
             glfwSetWindowShouldClose(window, GL_TRUE);
             break;

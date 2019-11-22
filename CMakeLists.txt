@@ -34,7 +34,7 @@ set(
 set(
     INCLUDES
         src/shader_compiler.hpp
-)
+        src/mat4.hpp)
 
 # Make a list of all of the directories to look in when doing #include "whatever.h"
 set(
