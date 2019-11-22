@@ -51,16 +51,16 @@ static void keyCallback(GLFWwindow *window, GLint key, GLint scancode, GLint act
             M = Mat4(IDENTITY);
             break;
         case GLFW_KEY_RIGHT:
-//            M = scale(M, vec3(1.02f, 1.0f, 0));
+            M = M * Mat4(1.02f, 1.0f, 0);
             break;
         case GLFW_KEY_LEFT:
-//            M = scale(M, vec3(0.98f, 1.0f, 0));
+            M = M * Mat4(0.98f, 1.0f, 0);
             break;
         case GLFW_KEY_UP:
-//            M = scale(M, vec3(1.0f, 1.02f, 0));
+            M = M * Mat4(1.0f, 1.02f, 0);
             break;
         case GLFW_KEY_DOWN:
-//            M = scale(M, vec3(1.0f, 0.98f, 0));
+            M = M * Mat4(1.0f, 0.98f, 0);
             break;
         default:
             break;

@@ -61,6 +61,14 @@ public:
         values[11] = translation.z;
     }
 
+    explicit Mat4(const float scaleX, const float scaleY, const float scaleZ) : nR(4), nC(4) {
+        values.resize(nR * nC);
+        setIdentity();
+        values[0] = scaleX;
+        values[5] = scaleY;
+        values[10] = scaleZ;
+    }
+
     Mat4(const Mat4 &m) : nR(m.nR), nC(m.nC) {
         values.resize(nR * nC);
         // deep copy the values variable
