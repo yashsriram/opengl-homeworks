@@ -103,6 +103,10 @@ public:
         return values;
     }
 
+    Vec3 getViewDirection() const {
+        return Vec3(values[8], values[9], values[10]) * -1;
+    }
+
     void set(const int &i, const int &j, const float &k) {
         values[i * nC + j] = k;
     }

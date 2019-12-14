@@ -36,18 +36,38 @@ Vec3f transformVector(Mat4 const &mat, Vec3f const &v) {
     return result;
 }
 
+void resetViewMatrix(Vec3 eye = Vec3(0, 0, 0)) {
+    Vec3 viewDir(1, 0, -1);
+    Vec3 upDir(0, 1, 0);
+    Vec3 n = viewDir.unit() * -1;
+    Vec3 u = upDir.unit().cross(n);
+    Vec3 v = n.cross(u);
+    Vec3 d(eye.dot(u) * -1, eye.dot(v) * -1, eye.dot(n) * -1);
+    Globals::viewMatrix.setAsViewMatrix(u, v, n, d);
+}
+
 static void errorCallback(int error, const char *description) {
     cerr << "Error: " << description << endl;
 }
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
+        Vec3 viewDirection = Globals::viewMatrix.getViewDirection();
         switch (key) {
             case GLFW_KEY_ESCAPE:
                 glfwSetWindowShouldClose(window, GL_TRUE);
                 break;
             case GLFW_KEY_Q:
                 glfwSetWindowShouldClose(window, GL_TRUE);
+                break;
+            case GLFW_KEY_R:
+                resetViewMatrix();
+                break;
+            case GLFW_KEY_UP:
+                Globals::viewMatrix = Mat4(viewDirection * 0.05) * Globals::viewMatrix;
+                break;
+            case GLFW_KEY_DOWN:
+                Globals::viewMatrix = Mat4(viewDirection * -0.05) * Globals::viewMatrix;
                 break;
                 // ToDo: update the viewing transformation matrix according to key presses
         }
@@ -91,9 +111,9 @@ int main(int argc, char *argv[]) {
     if (max > min) { scale = 1 / max; }
     else { scale = 1 / min; }
 
-    Mat4 mscale(scale, scale, scale);
+    Mat4 mScale(scale, scale, scale);
     for (auto &vert : Globals::mesh.vertices) {
-        vert = transformVector(mscale, vert);
+        vert = transformVector(mScale, vert);
     }
 
     // Set up window
@@ -154,14 +174,8 @@ int main(int argc, char *argv[]) {
     shader.enable();
 
     // Initialize the eye position
-    Vec3 eye(0.5, 0, 0);
-    Vec3 viewDir(0, 0, -1);
-    Vec3 upDir(0, 1, 0);
-    Vec3 n = viewDir.unit() * -1;
-    Vec3 u = upDir.unit().cross(n);
-    Vec3 v = n.cross(u);
-    Vec3 d(eye.dot(u) * -1, eye.dot(v) * -1, eye.dot(n) * -1);
-    Globals::viewMatrix.setAsViewMatrix(u, v, n, d);
+    Vec3 eye(0, 0, 0);
+    resetViewMatrix(eye);
 
     // Bind buffers
     glBindVertexArray(Globals::trisVao);
