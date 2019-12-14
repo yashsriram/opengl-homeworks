@@ -22,9 +22,18 @@ namespace Globals {
     TriMesh mesh;
 
     // Model, view and projection matrices, initialized to the identity
-    Mat4 model;
-    Mat4 view;
-    Mat4 projection;
+    Mat4 modelMatrix;
+    Mat4 viewMatrix;
+    Mat4 projectionMatrix;
+}
+
+Vec3f transformVector(Mat4 const &mat, Vec3f const &v) {
+    vector<float> values = mat.getAll();
+    Vec3f result(values[0] * v[0] + values[1] * v[1] + values[2] * v[2] + values[3] * 0,
+                 values[4] * v[0] + values[5] * v[1] + values[6] * v[2] + values[7] * 0,
+                 values[8] * v[0] + values[9] * v[1] + values[10] * v[2] + values[11] * 0);
+
+    return result;
 }
 
 static void errorCallback(int error, const char *description) {
@@ -83,8 +92,8 @@ int main(int argc, char *argv[]) {
     else { scale = 1 / min; }
 
     Mat4 mscale(scale, scale, scale);
-    for (auto &vertice : Globals::mesh.vertices) {
-        vertice = mscale * vertice;
+    for (auto &vert : Globals::mesh.vertices) {
+        vert = transformVector(mscale, vert);
     }
 
     // Set up window
@@ -144,8 +153,15 @@ int main(int argc, char *argv[]) {
     // Enable the shader, this allows us to set uniforms and attributes
     shader.enable();
 
-    // Initialize the eye position (set at origin for now; you will need to change this)
-    Vec3 eye(0.f, 0.f, 0.f);
+    // Initialize the eye position
+    Vec3 eye(0.5, 0, 0);
+    Vec3 viewDir(0, 0, -1);
+    Vec3 upDir(0, 1, 0);
+    Vec3 n = viewDir.unit() * -1;
+    Vec3 u = upDir.unit().cross(n);
+    Vec3 v = n.cross(u);
+    Vec3 d(eye.dot(u) * -1, eye.dot(v) * -1, eye.dot(n) * -1);
+    Globals::viewMatrix.setAsViewMatrix(u, v, n, d);
 
     // Bind buffers
     glBindVertexArray(Globals::trisVao);
@@ -161,9 +177,9 @@ int main(int argc, char *argv[]) {
         float model[16];
         float view[16];
         float projection[16];
-        Globals::model.dumpColumnWise(model);
-        Globals::view.dumpColumnWise(view);
-        Globals::projection.dumpColumnWise(projection);
+        Globals::modelMatrix.dumpColumnWise(model);
+        Globals::viewMatrix.dumpColumnWise(view);
+        Globals::projectionMatrix.dumpColumnWise(projection);
         glUniformMatrix4fv(shader.uniform("model"), 1, GL_FALSE, model); // model transformation
         glUniformMatrix4fv(shader.uniform("view"), 1, GL_FALSE, view); // viewing transformation
         glUniformMatrix4fv(shader.uniform("projection"), 1, GL_FALSE, projection); // projection matrix

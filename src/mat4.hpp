@@ -99,6 +99,10 @@ public:
         return values[i * nC + j];
     }
 
+    std::vector<float> getAll() const {
+        return values;
+    }
+
     void set(const int &i, const int &j, const float &k) {
         values[i * nC + j] = k;
     }
@@ -139,6 +143,26 @@ public:
             }
         }
         return this;
+    }
+
+    // Set as viewing matrix
+    void setAsViewMatrix(Vec3 const &u, Vec3 const &v, Vec3 const &n, Vec3 const &d) {
+        values[0] = u.x;
+        values[1] = u.y;
+        values[2] = u.z;
+        values[3] = d.x;
+        values[4] = v.x;
+        values[5] = v.y;
+        values[6] = v.z;
+        values[7] = d.y;
+        values[8] = n.x;
+        values[9] = n.y;
+        values[10] = n.z;
+        values[11] = d.z;
+        values[12] = 0;
+        values[13] = 0;
+        values[14] = 0;
+        values[15] = 1;
     }
 
     // Transpose
@@ -193,15 +217,6 @@ public:
                 result.values[i * m.nC + j] = elementSum;
             }
         }
-        return result;
-    }
-
-    // Matrix multiply
-    Vec3f operator*(Vec3f const &v) const {
-        Vec3f result(values[0] * v[0] + values[1] * v[1] + values[2] * v[2],
-                     values[4] * v[0] + values[5] * v[1] + values[6] * v[2],
-                     values[8] * v[0] + values[9] * v[1] + values[10] * v[2]);
-
         return result;
     }
 
