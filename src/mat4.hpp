@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include "trimesh.hpp"
 #include "vec3.hpp"
 
 #ifndef M_PI
@@ -26,6 +27,7 @@ class Mat4 {
 
 public:
 
+    // Default is identity transform, can be initialized to ONES, ZEROS if needed
     explicit Mat4(enum INIT init = IDENTITY) : nR(4), nC(4) {
         values.resize(nR * nC);
         switch (init) {
@@ -44,6 +46,7 @@ public:
         }
     }
 
+    // Rotation about z-axis transform
     explicit Mat4(const float angleInDegrees) : nR(4), nC(4) {
         values.resize(nR * nC);
         setIdentity();
@@ -53,6 +56,7 @@ public:
         values[5] = cos(angleInDegrees / 180 * M_PI);
     }
 
+    // Translation transform
     explicit Mat4(const Vec3 translation) : nR(4), nC(4) {
         values.resize(nR * nC);
         setIdentity();
@@ -61,6 +65,7 @@ public:
         values[11] = translation.z;
     }
 
+    // Scale transform
     explicit Mat4(const float scaleX, const float scaleY, const float scaleZ) : nR(4), nC(4) {
         values.resize(nR * nC);
         setIdentity();
@@ -69,9 +74,9 @@ public:
         values[10] = scaleZ;
     }
 
+    // Deep copy
     Mat4(const Mat4 &m) : nR(m.nR), nC(m.nC) {
         values.resize(nR * nC);
-        // deep copy the values variable
         for (int i = 0; i < nR; ++i) {
             for (int j = 0; j < nC; ++j) {
                 values[i * nC + j] = m.values[i * nC + j];
@@ -79,6 +84,7 @@ public:
         }
     }
 
+    // Deep copy
     void operator=(Mat4 const &m) {
         for (int i = 0; i < nR; ++i) {
             for (int j = 0; j < nC; ++j) {
@@ -135,6 +141,7 @@ public:
         return this;
     }
 
+    // Transpose
     Mat4 operator~() const {
         Mat4 result;
 
@@ -147,6 +154,7 @@ public:
         return result;
     }
 
+    // Element-wise add
     Mat4 operator+(Mat4 const &m) const {
         Mat4 result;
 
@@ -159,6 +167,7 @@ public:
         return result;
     }
 
+    // Element-wise subtract
     Mat4 operator-(Mat4 const &m) const {
         Mat4 result;
 
@@ -171,6 +180,7 @@ public:
         return result;
     }
 
+    // Matrix multiply
     Mat4 operator*(Mat4 const &m) const {
         Mat4 result;
 
@@ -186,7 +196,16 @@ public:
         return result;
     }
 
+    // Matrix multiply
+    Vec3f operator*(Vec3f const &v) const {
+        Vec3f result(values[0] * v[0] + values[1] * v[1] + values[2] * v[2],
+                     values[4] * v[0] + values[5] * v[1] + values[6] * v[2],
+                     values[8] * v[0] + values[9] * v[1] + values[10] * v[2]);
 
+        return result;
+    }
+
+    // Element-wise scalar multiply
     Mat4 operator*(float const &value) const {
         Mat4 result;
 
@@ -199,7 +218,7 @@ public:
         return result;
     }
 
-
+    // Element-wise multiply
     Mat4 operator%(Mat4 const &m) const {
         Mat4 result;
 
@@ -223,7 +242,6 @@ public:
     Vec3 getTranslationVec3() const {
         return {values[3], values[7], values[11]};
     }
-
 };
 
 std::ostream &operator<<(std::ostream &out, const Mat4 &m) {

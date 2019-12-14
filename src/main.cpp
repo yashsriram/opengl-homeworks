@@ -3,77 +3,14 @@
 #include "gl3.h"
 #include "trimesh.hpp"
 #include "shader.hpp"
+#include "mat4.hpp"
+#include "vec3.hpp"
 #include <cstring>
 
 #define WIN_WIDTH 1000
 #define WIN_HEIGHT 1000
 
 using namespace std;
-
-class Mat4x4 {
-public:
-
-    float m[16];
-
-    Mat4x4() { // Default: Identity
-        m[0] = 1.f;
-        m[4] = 0.f;
-        m[8] = 0.f;
-        m[12] = 0.f;
-        m[1] = 0.f;
-        m[5] = 1.f;
-        m[9] = 0.f;
-        m[13] = 0.f;
-        m[2] = 0.f;
-        m[6] = 0.f;
-        m[10] = 1.f;
-        m[14] = 0.f;
-        m[3] = 0.f;
-        m[7] = 0.f;
-        m[11] = 0.f;
-        m[15] = 1.f;
-    }
-
-    void make_identity() {
-        m[0] = 1.f;
-        m[4] = 0.f;
-        m[8] = 0.f;
-        m[12] = 0.f;
-        m[1] = 0.f;
-        m[5] = 1.f;
-        m[9] = 0.f;
-        m[13] = 0.f;
-        m[2] = 0.f;
-        m[6] = 0.f;
-        m[10] = 1.f;
-        m[14] = 0.f;
-        m[3] = 0.f;
-        m[7] = 0.f;
-        m[11] = 0.f;
-        m[15] = 1.f;
-    }
-
-    void print() {
-        std::cout << m[0] << ' ' << m[4] << ' ' << m[8] << ' ' << m[12] << "\n";
-        std::cout << m[1] << ' ' << m[5] << ' ' << m[9] << ' ' << m[13] << "\n";
-        std::cout << m[2] << ' ' << m[6] << ' ' << m[10] << ' ' << m[14] << "\n";
-        std::cout << m[3] << ' ' << m[7] << ' ' << m[11] << ' ' << m[15] << "\n";
-    }
-
-    void make_scale(float x, float y, float z) {
-        make_identity();
-        m[0] = x;
-        m[5] = y;
-        m[10] = x;
-    }
-};
-
-static inline const Vec3f operator*(const Mat4x4 &m, const Vec3f &v) {
-    Vec3f r(m.m[0] * v[0] + m.m[4] * v[1] + m.m[8] * v[2],
-            m.m[1] * v[0] + m.m[5] * v[1] + m.m[9] * v[2],
-            m.m[2] * v[0] + m.m[6] * v[1] + m.m[10] * v[2]);
-    return r;
-}
 
 namespace Globals {
     // cursor positions
@@ -85,9 +22,9 @@ namespace Globals {
     TriMesh mesh;
 
     // Model, view and projection matrices, initialized to the identity
-    Mat4x4 model;
-    Mat4x4 view;
-    Mat4x4 projection;
+    Mat4 model;
+    Mat4 view;
+    Mat4 projection;
 }
 
 static void errorCallback(int error, const char *description) {
@@ -145,8 +82,7 @@ int main(int argc, char *argv[]) {
     if (max > min) { scale = 1 / max; }
     else { scale = 1 / min; }
 
-    Mat4x4 mscale;
-    mscale.make_scale(scale, scale, scale);
+    Mat4 mscale(scale, scale, scale);
     for (auto &vertice : Globals::mesh.vertices) {
         vertice = mscale * vertice;
     }
@@ -209,7 +145,7 @@ int main(int argc, char *argv[]) {
     shader.enable();
 
     // Initialize the eye position (set at origin for now; you will need to change this)
-    Vec3f eye = Vec3f(0.f, 0.f, 0.f);
+    Vec3 eye(0.f, 0.f, 0.f);
 
     // Bind buffers
     glBindVertexArray(Globals::trisVao);
@@ -222,10 +158,16 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Send updated info to the GPU
-        glUniformMatrix4fv(shader.uniform("model"), 1, GL_FALSE, Globals::model.m); // model transformation
-        glUniformMatrix4fv(shader.uniform("view"), 1, GL_FALSE, Globals::view.m); // viewing transformation
-        glUniformMatrix4fv(shader.uniform("projection"), 1, GL_FALSE, Globals::projection.m); // projection matrix
-        glUniform3f(shader.uniform("eye"), eye[0], eye[1], eye[2]); // used in fragment shader
+        float model[16];
+        float view[16];
+        float projection[16];
+        Globals::model.dumpColumnWise(model);
+        Globals::view.dumpColumnWise(view);
+        Globals::projection.dumpColumnWise(projection);
+        glUniformMatrix4fv(shader.uniform("model"), 1, GL_FALSE, model); // model transformation
+        glUniformMatrix4fv(shader.uniform("view"), 1, GL_FALSE, view); // viewing transformation
+        glUniformMatrix4fv(shader.uniform("projection"), 1, GL_FALSE, projection); // projection matrix
+        glUniform3f(shader.uniform("eye"), eye.x, eye.y, eye.z); // used in fragment shader
 
         // Draw
         glDrawElements(GL_TRIANGLES, Globals::mesh.faces.size() * 3, GL_UNSIGNED_INT, 0);
