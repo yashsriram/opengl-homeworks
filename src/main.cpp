@@ -10,8 +10,6 @@
 using namespace std;
 
 namespace Globals {
-    double cursorX, cursorY;
-    float aspect;
     GLuint vertsVbo[1], colorsVbo[1], normalsVbo[1], facesIbo[1], trisVao;
     TriMesh mesh;
 
@@ -19,18 +17,22 @@ namespace Globals {
     const Mat4 rotCCW(2, Y);
     const Mat4 rotCW(-2, Y);
 
-    // Model, view and projection matrices, initialized to the identity
     Mat4 modelMatrix;
-    Mat4 viewMatrix;
-    Mat4 projectionMatrix;
-
-    // Deafault window size
-    float winWidth = 1000, winHeight = 1000;
 
     // Default values of eye, view dir and up dir
     Vec3 eye(0, -12, 0);
     Vec3 viewDir(1, 0, 0);
     Vec3 upDir(0, 1, 0);
+    Mat4 viewMatrix;
+
+    // Deafault window size
+    int winWidth = 1000;
+    int winHeight = 1000;
+    float near = 2, far = 40;
+    float left = -1, right = 1;
+    float bottom = -1, top = 1;
+
+    Mat4 projectionMatrix;
 }
 
 //Vec3f transformVector(Mat4 const &mat, Vec3f const &v) {
@@ -82,14 +84,19 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
     }
 }
 
-static void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
-    Globals::winWidth = float(width);
-    Globals::winHeight = float(height);
-    Globals::aspect = Globals::winWidth / Globals::winHeight;
+static void framebufferSizeCallback(GLFWwindow *window, int newWidth, int newHeight) {
+    using namespace Globals;
 
-    glViewport(0, 0, width, height);
+    Globals::left *= ((float) newWidth) / winWidth;
+    Globals::right *= ((float) newWidth) / winWidth;
+    bottom *= ((float) newHeight) / winHeight;
+    top *= ((float) newHeight) / winHeight;
+    Globals::projectionMatrix = Mat4(near, far, Globals::left, Globals::right, bottom, top);
 
-    // ToDo: update the perspective matrix according to the new window size
+    winWidth = newWidth;
+    winHeight = newHeight;
+
+    glViewport(0, 0, newWidth, newHeight);
 }
 
 void initScene();
@@ -137,7 +144,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create the glfw window
-    window = glfwCreateWindow(int(Globals::winWidth), int(Globals::winHeight), "HW2c - OpenGL", NULL, NULL);
+    window = glfwCreateWindow(Globals::winWidth, Globals::winHeight, "HW2c - OpenGL", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return EXIT_FAILURE;
@@ -169,7 +176,7 @@ int main(int argc, char *argv[]) {
     // Initialize the scene
     // IMPORTANT: Only call after gl context has been created
     initScene();
-    framebufferSizeCallback(window, int(Globals::winWidth), int(Globals::winHeight));
+    framebufferSizeCallback(window, Globals::winWidth, Globals::winHeight);
 
     // Initialize OpenGL
     glEnable(GL_DEPTH_TEST);
@@ -276,6 +283,6 @@ void initScene() {
 
     // Initialize the view matrix and projection matrix
     setViewMatrix(Globals::eye, Globals::viewDir, Globals::upDir);
-    Globals::projectionMatrix = Mat4(2, 30, -2, 2, -2, 2);
+    Globals::projectionMatrix = Mat4(near, far, Globals::left, Globals::right, bottom, top);
 }
 
