@@ -14,9 +14,9 @@ uniform mat4 projection;
 
 void main()
 {
-	vec4 pos = projection * model * view * vec4(in_position,1.0);
-	vcolor = in_color;
-	vnormal = in_normal;
-	vposition = vec3( pos );
-	gl_Position = pos;
+    vec4 pos = projection * view *  model *  vec4(in_position, 1.0);
+    vcolor = in_color;
+    vnormal = in_normal;
+    vposition = vec3(pos);
+    gl_Position = pos;
 }

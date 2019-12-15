@@ -7,7 +7,6 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
-#include "trimesh.hpp"
 #include "vec3.hpp"
 
 #ifndef M_PI
@@ -16,6 +15,10 @@
 
 enum INIT {
     IDENTITY, ONES, ZEROS
+};
+
+enum AXIS {
+    X, Y, Z
 };
 
 class Mat4 {
@@ -46,14 +49,30 @@ public:
         }
     }
 
-    // Rotation about z-axis transform
-    explicit Mat4(const float angleInDegrees) : nR(4), nC(4) {
+    // Rotation about x,y,z axes transform
+    explicit Mat4(const float angleInDegrees, enum AXIS axis) : nR(4), nC(4) {
         values.resize(nR * nC);
         setIdentity();
-        values[0] = cos(angleInDegrees / 180 * M_PI);
-        values[1] = -sin(angleInDegrees / 180 * M_PI);
-        values[4] = sin(angleInDegrees / 180 * M_PI);
-        values[5] = cos(angleInDegrees / 180 * M_PI);
+        switch (axis) {
+            case X:
+                values[5] = cos(angleInDegrees / 180 * M_PI);
+                values[6] = -sin(angleInDegrees / 180 * M_PI);
+                values[9] = sin(angleInDegrees / 180 * M_PI);
+                values[10] = cos(angleInDegrees / 180 * M_PI);
+                break;
+            case Y:
+                values[0] = cos(angleInDegrees / 180 * M_PI);
+                values[2] = sin(angleInDegrees / 180 * M_PI);
+                values[8] = -sin(angleInDegrees / 180 * M_PI);
+                values[10] = cos(angleInDegrees / 180 * M_PI);
+                break;
+            case Z:
+                values[0] = cos(angleInDegrees / 180 * M_PI);
+                values[1] = -sin(angleInDegrees / 180 * M_PI);
+                values[4] = sin(angleInDegrees / 180 * M_PI);
+                values[5] = cos(angleInDegrees / 180 * M_PI);
+                break;
+        }
     }
 
     // Translation transform
@@ -72,6 +91,22 @@ public:
         values[0] = scaleX;
         values[5] = scaleY;
         values[10] = scaleZ;
+    }
+
+    // Perspective transform
+    explicit Mat4(const float near, const float far,
+                  const float left, const float right,
+                  const float bottom, const float top) : nR(4), nC(4) {
+        values.resize(nR * nC);
+        setIdentity();
+        values[0] = (2 * near) / (right - left);
+        values[2] = (right + left) / (right - left);
+        values[5] = (2 * near) / (top - bottom);
+        values[6] = (top + bottom) / (top - bottom);
+        values[10] = -(far + near) / (far - near);
+        values[11] = (-2 * far * near) / (far - near);
+        values[14] = -1;
+        values[15] = 0;
     }
 
     // Deep copy
@@ -233,6 +268,14 @@ public:
                 result.values[i * nC + j] = this->values[i * nC + j] * value;
             }
         }
+
+        return result;
+    }
+
+    Vec3 transformVector(Vec3 const &v) const {
+        Vec3 result(values[0] * v.x + values[1] * v.y + values[2] * v.z + values[3] * 0,
+                    values[4] * v.x + values[5] * v.y + values[6] * v.z + values[7] * 0,
+                    values[8] * v.x + values[9] * v.y + values[10] * v.z + values[11] * 0);
 
         return result;
     }
