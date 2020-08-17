@@ -1,14 +1,33 @@
-# Notes
-Everything is done on Linux
-Assumes some opengl implementation is installed on testing machine
+# opengl-2d-transformations
 
-# Compilation
-Compile with (with working dir as the one containing CMakeLists.txt)
-  * mkdir build
-  * cd build
-  * cmake ..
-  * make
+## description
+- A simple implementation of some 2D transformations in opengl.
 
-# Running
-Run with (with working dir as build)
-  * ./HW2b
+## roadmap
+- Problems in `ps.md` are solved.
+
+## code
+- `ps.md` contains the problem statement.
+- `ext/` contains libraries glad and glfw.
+- `src/` contains all the source code.
+
+## documentation
+- The documentation for the code is itself.
+
+## usage
+
+### how to run? [linux]
+- Assumes some opengl implementation is installed.
+- Open a terminal at project root (the directory containing this file).
+- Use the following for compilation which produces executable `HW2b`.
+  - `mkdir build`
+  - `cd build`
+  - `cmake ..`
+  - `make`
+- Use `./HW2b` to run.
+
+### keymap
+- `Click and drag` to rotate the rectangle.
+- `Ctrl` + `Click and drag` to translate the rectangle.
+- `Arrow keys` to scale rectangle along its width and height.
+- `r` to reset everything to initial state.
