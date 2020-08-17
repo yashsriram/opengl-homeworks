@@ -35,3 +35,5 @@
 
 ## demonstration
 Implementation is illustrated in the GIF below.
+
+![](./github/hw2cdemo.gif)
