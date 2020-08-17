@@ -10,6 +10,7 @@
 - `ps.md` contains the problem statement.
 - `ext/` contains libraries glad and glfw.
 - `src/` contains all the source code.
+- `github/` contains demonstrations.
 
 ## documentation
 - The documentation for the code is itself.
@@ -26,8 +27,13 @@
   - `make`
 - Use `./HW2b` to run.
 
-### keymap
+### controls
 - `Click and drag` to rotate the rectangle.
 - `Ctrl` + `Click and drag` to translate the rectangle.
 - `Arrow keys` to scale rectangle along its width and height.
 - `r` to reset everything to initial state.
+
+## demonstration
+Implementation is illustrated in the GIF below.
+
+![](./github/operation.gif)
